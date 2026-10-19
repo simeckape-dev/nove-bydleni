@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Nové bydlení{% endblock %}</title>
+<style>
+:root { --bg: #f4f5f7; --card: #fff; --text: #1d2125; --muted: #626f86; --line: #dcdfe4; --accent: #0c66e4;
+        --new: #1f845a; --gone: #ae2e24; --cheap: #946f00; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #161a1d; --card: #22272b; --text: #dee4ea; --muted: #9fadbc; --line: #384148; --accent: #579dff;
+          --new: #4bce97; --gone: #f87168; --cheap: #e2b203; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text); }
+header { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; padding: 14px 16px; border-bottom: 1px solid var(--line); background: var(--card); }
+header h1 { font-size: 20px; margin: 0; }
+header nav a { color: var(--accent); text-decoration: none; margin-right: 12px; }
+header .meta { color: var(--muted); font-size: 13px; margin-left: auto; }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+a { color: var(--accent); }
+.muted { color: var(--muted); }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+<header>
+  <h1>Nové bydlení</h1>
+  <nav><a href="/">Nabídky</a><a href="/stav">Stav portálů</a></nav>
+  <span class="meta">
+    {% if runner.running %}Právě stahuji nabídky…{% else %}Poslední stažení {{ runner.last_cycle|dt }}{% if runner.next_cycle %}, další {{ runner.next_cycle|dt }}{% endif %}{% endif %}
+  </span>
+</header>
+<main>{% block main %}{% endblock %}</main>
+</body>
+</html>

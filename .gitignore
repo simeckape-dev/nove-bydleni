@@ -1,5 +1,3 @@
-**/__pycache__
-remembered_offers.txt
-found_offers.txt
+__pycache__/
 data/
-.env.local
+.env*

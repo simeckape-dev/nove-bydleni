@@ -1,5 +1,6 @@
-requests
-beautifulsoup4
-python-dotenv
-discord.py
-environ-config
+requests==2.34.2
+beautifulsoup4==4.15.0
+PyYAML==6.0.3
+fastapi==0.146.0
+uvicorn==0.54.0
+Jinja2==3.1.6

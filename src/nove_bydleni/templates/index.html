@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block head %}
+<style>
+form.filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: end; background: var(--card); border: 1px solid var(--line);
+               border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+form.filters label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 3px; }
+form.filters select, form.filters input[type=number] { font: inherit; padding: 5px 8px; border: 1px solid var(--line); border-radius: 6px;
+               background: var(--bg); color: var(--text); min-width: 120px; }
+form.filters .disp { display: flex; gap: 6px; flex-wrap: wrap; }
+form.filters .disp label, form.filters .chk { flex-direction: row; align-items: center; gap: 4px; color: var(--text); font-size: 14px; }
+form.filters button { font: inherit; padding: 6px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+.summary { margin: 0 0 12px; color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; }
+.card.seen { opacity: .55; }
+.card.gone { opacity: .45; }
+.card .img { aspect-ratio: 4/3; background: var(--line) center/cover no-repeat; position: relative; display: block; }
+.badges { position: absolute; top: 8px; left: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+.badge { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; color: #fff; }
+.badge.new { background: var(--new); } .badge.gone { background: var(--gone); } .badge.cheap { background: var(--cheap); }
+.card .body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.card .price { font-size: 18px; font-weight: 700; }
+.card .price small { font-size: 13px; font-weight: 400; color: var(--muted); }
+.card .title { font-weight: 600; }
+.card .title a { color: inherit; text-decoration: none; }
+.card .loc { color: var(--muted); font-size: 14px; }
+.card .foot { margin-top: auto; padding-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.portal { padding: 1px 7px; border-radius: 4px; border: 1px solid; text-decoration: none; font-size: 12px; }
+.card .when { margin-left: auto; color: var(--muted); }
+.empty { padding: 40px; text-align: center; color: var(--muted); }
+</style>
+{% endblock %}
+{% block main %}
+<form class="filters" method="get">
+  <label>Typ
+    <select name="typ"><option value="">vše</option>{% for k, n in kinds.items() %}<option value="{{ k }}" {% if f.typ == k %}selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+  </label>
+  <label>Lokalita
+    <select name="lokalita"><option value="">vše</option>{% for a in areas %}<option {% if f.lokalita == a %}selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+  </label>
+  <label>Portál
+    <select name="portal"><option value="">vše</option>{% for p in portals %}<option {% if f.portal == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+  </label>
+  <label>Dispozice
+    <span class="disp">{% for d in dispositions %}<label><input type="checkbox" class="d" value="{{ d }}" {% if d in f.dispozice %}checked{% endif %}>{{ d }}</label>{% endfor %}</span>
+    <input type="hidden" name="dispozice" value="{{ f.dispozice|join(',') }}">
+  </label>
+  <label>Cena do (Kč)<input type="number" name="cena_do" step="500" min="0" value="{{ f.cena_do }}"></label>
+  <label>Řazení
+    <select name="razeni">
+      <option value="nove" {% if f.razeni == 'nove' %}selected{% endif %}>nejnovější</option>
+      <option value="cena" {% if f.razeni == 'cena' %}selected{% endif %}>nejlevnější</option>
+      <option value="plocha" {% if f.razeni == 'plocha' %}selected{% endif %}>největší</option>
+    </select>
+  </label>
+  <label class="chk"><input type="checkbox" name="jen_nove" value="1" {% if f.jen_nove %}checked{% endif %}>jen nové ({{ new_hours }} h)</label>
+  <label class="chk"><input type="checkbox" name="zmizele" value="1" {% if f.zmizele %}checked{% endif %}>i zmizelé</label>
+  <label class="chk"><input type="checkbox" id="hide-seen">skrýt prohlédnuté</label>
+  <button type="submit">Filtrovat</button>
+</form>
+
+<p class="summary">Zobrazeno {{ items|length }} nabídek (celkem {{ count_all }} různých nemovitostí). Klik na nabídku ji označí jako prohlédnutou.</p>
+
+{% if items %}
+<div class="grid">
+{% for i in items %}{% set o = i.o %}
+  <article class="card {% if o.gone_at %}gone{% endif %}" data-link="{{ o.link }}">
+    <a class="img" href="{{ o.link }}" target="_blank" rel="noopener" {% if o.image_url %}style="background-image:url('{{ o.image_url }}')"{% endif %}>
+      <span class="badges">
+        {% if i.new %}<span class="badge new">nové</span>{% endif %}
+        {% if i.cheaper %}<span class="badge cheap" title="{% for h in i.history %}{{ h.old|czk }} → {{ h.new|czk }}; {% endfor %}">zlevněno</span>{% endif %}
+        {% if o.gone_at %}<span class="badge gone">zmizelo {{ o.gone_at|dt }}</span>{% endif %}
+      </span>
+    </a>
+    <div class="body">
+      <div class="price">{% if o.price %}{{ o.price|czk }}{% else %}<span class="muted">cena neuvedena</span>{% endif %}
+        {% if o.price_text and o.price_text != o.price|czk %}<small>{{ o.price_text }}</small>{% endif %}</div>
+      <div class="title"><a href="{{ o.link }}" target="_blank" rel="noopener">{{ o.title }}</a></div>
+      <div class="loc">{{ o.location }}{% if o.location %} · {% endif %}{{ o.area_name }}</div>
+      <div class="foot">
+        {% for l in i.links %}<a class="portal" href="{{ l.link }}" target="_blank" rel="noopener">{{ l.portal }}</a>{% endfor %}
+        <span class="when" title="poprvé nalezeno">{{ i.first_seen|dt }}</span>
+      </div>
+    </div>
+  </article>
+{% endfor %}
+</div>
+{% else %}
+<div class="empty">Žádné nabídky. {% if not runner.last_cycle %}První stažení ještě probíhá, zkus to za pár minut.{% endif %}</div>
+{% endif %}
+
+<script>
+// Prohlédnuté nabídky si pamatuje prohlížeč (localStorage), server o nich neví.
+const KEY = "nove-bydleni-seen";
+let seen = new Set();
+try { seen = new Set(JSON.parse(localStorage.getItem(KEY) || "[]")); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify([...seen])); } catch (e) {} };
+const hideSeen = document.getElementById("hide-seen");
+try { hideSeen.checked = localStorage.getItem(KEY + "-hide") === "1"; } catch (e) {}
+function paint() {
+  document.querySelectorAll(".card").forEach(c => {
+    const s = seen.has(c.dataset.link);
+    c.classList.toggle("seen", s);
+    c.style.display = s && hideSeen.checked ? "none" : "";
+  });
+}
+document.querySelectorAll(".card a").forEach(a => a.addEventListener("click", () => {
+  seen.add(a.closest(".card").dataset.link); save(); setTimeout(paint, 300);
+}));
+hideSeen.addEventListener("change", () => { try { localStorage.setItem(KEY + "-hide", hideSeen.checked ? "1" : "0"); } catch (e) {} paint(); });
+document.querySelector("form.filters").addEventListener("submit", () => {
+  document.querySelector("input[name=dispozice]").value = [...document.querySelectorAll("input.d:checked")].map(x => x.value).join(",");
+});
+paint();
+</script>
+{% endblock %}

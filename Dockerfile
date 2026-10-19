@@ -1,17 +1,18 @@
-FROM python:3-alpine
+# Nové bydlení: hlídání nabídek pronájmu na realitních portálech + webová stránka
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/src CONFIG_FILE=/config/hledani.yaml DATA_DIR=/data PORT=8080
 
 WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src ./src
+COPY config/hledani.yaml /config/hledani.yaml
+
+RUN useradd --system --uid 10001 --home /data app && mkdir -p /data && chown app /data
+USER 10001
 VOLUME ["/data"]
-
-COPY requirements.txt requirements.txt
-RUN apk add --no-cache --virtual .build-deps gcc musl-dev && \
-    pip3 install -r requirements.txt && \
-    apk del .build-deps
-
-ENV APP_ENV=docker
-
-COPY .env* .
-COPY src .
-COPY graphql ./graphql
-
-CMD ["python3", "main.py"]
+EXPOSE 8080
+CMD ["python", "-m", "nove_bydleni"]

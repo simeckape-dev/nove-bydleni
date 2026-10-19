@@ -1,0 +1,34 @@
+# Co hledat. Typy: byt, dum. Dispozice: 1+kk 1+1 2+kk 2+1 3+kk 3+1 4+kk 4+1 5+ atyp
+typy: [byt, dum]
+dispozice: [2+kk, 2+1, 3+kk, 3+1]
+# Domy často dispozici neuvádějí; true = takové nabídky ponechat
+nechat_neznamou_dispozici: true
+# Kolik stránek výsledků stáhnout z každého portálu (pro typ a lokalitu)
+max_stranek: 25
+
+# Lokality: každý portál má vlastní identifikátor místa. Chybí-li klíč portálu, portál se pro lokalitu přeskočí.
+lokality:
+  - nazev: Ostrava
+    obce: [Ostrava]                    # filtr pro portály, které umí jen okres (RE/MAX, REALCITY, EuroBydlení)
+    sreality: ostrava                  # sreality.cz/hledani/pronajem/byty/<…>
+    idnes: ostrava                     # reality.idnes.cz/s/pronajem/byty/<…>/
+    bezrealitky: R437354               # OSM relace města
+    realingo: Ostrava                  # adresa pro hledání
+    ulovdomov: [49.9138, 18.3763, 49.7258, 18.0984]   # hranice: sever, východ, jih, západ
+    remax: "132/3807"                  # kraj/okres (Ostrava-město)
+    realcity: 87                       # okres Ostrava-město
+    eurobydleni: {nazev: "Ostrava, Česko", stred: [49.8354, 18.2930], hranice: [49.9138, 18.3763, 49.7258, 18.0984]}
+    realitycz: okres-Ostrava-mesto     # reality.cz/pronajem/byty/<…>/
+    mmreality: ostrava                 # mmreality.cz/nemovitosti/pronajem/byty/<…>/
+  - nazev: Frýdek-Místek
+    obce: [Frýdek, Místek]
+    sreality: "frydek-mistek?region=obec-frydek-mistek"   # okres zúžený na město
+    idnes: frydek-mistek
+    bezrealitky: R436980
+    realingo: Frýdek-Místek
+    ulovdomov: [49.7287, 18.4356, 49.6308, 18.2478]
+    remax: "132/3802"                  # okres Frýdek-Místek
+    realcity: 82                       # okres Frýdek-Místek
+    eurobydleni: {nazev: "Frýdek-Místek, Česko", stred: [49.6856, 18.3483], hranice: [49.7287, 18.4356, 49.6308, 18.2478]}
+    realitycz: Frydek-Mistek
+    mmreality: frydek-mistek

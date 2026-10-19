@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Stav portálů · Nové bydlení{% endblock %}
+{% block head %}
+<style>
+table { border-collapse: collapse; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.ok { color: var(--new); } .err { color: var(--gone); }
+.wrap { overflow-x: auto; }
+form { margin: 0 0 14px; }
+button { font: inherit; padding: 6px 14px; border: 0; border-radius: 6px; background: var(--accent); color: #fff; cursor: pointer; }
+</style>
+{% endblock %}
+{% block main %}
+<form method="post" action="/stav/spustit"><button type="submit" {% if runner.running %}disabled{% endif %}>Stáhnout nabídky hned</button></form>
+<div class="wrap">
+<table>
+  <tr><th>Portál</th><th>Lokalita</th><th>Typ</th><th>Stav</th><th>Nabídek</th><th>Poslední úspěch</th><th>Chyba</th></tr>
+  {% for r in runs %}
+  <tr>
+    <td>{{ r.portal }}</td><td>{{ r.area_name }}</td><td>{{ kinds.get(r.kind, r.kind) }}</td>
+    <td>{% if r.error %}<span class="err">chyba</span>{% else %}<span class="ok">OK</span>{% endif %}</td>
+    <td class="num">{{ r.found }}</td><td>{{ r.last_ok|dt }}</td><td class="muted">{{ r.error or "" }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="7" class="muted">Ještě neproběhlo žádné stažení.</td></tr>
+  {% endfor %}
+</table>
+</div>
+{% endblock %}
