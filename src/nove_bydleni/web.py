@@ -48,8 +48,12 @@ def create_app(storage: Storage, runner: Runner) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request, typ: str = "", lokalita: str = "", portal: str = "", dispozice: str = "",
-              cena_do: int | None = None, jen_nove: int = 0, zmizele: int = 0, razeni: str = "nove"):
+              cena_do: str = "", jen_nove: str = "", zmizele: str = "", razeni: str = "nove"):
+        # Formulář posílá i prázdná pole (cena_do=), proto parametry jako text
         now = time.time()
+        cena_do = int(cena_do) if cena_do.strip().isdigit() else None
+        jen_nove = 1 if jen_nove else 0
+        zmizele = 1 if zmizele else 0
         groups = _group(storage.offers(include_gone=bool(zmizele)))
         disps = [d for d in dispozice.split(",") if d]
         items = []
