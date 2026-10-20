@@ -1,6 +1,8 @@
 """Webová stránka s nabídkami a stavem portálů."""
 import json
+import re
 import time
+import unicodedata
 from collections import OrderedDict
 from pathlib import Path
 
@@ -17,20 +19,44 @@ KIND_NAMES = {"byt": "Byt", "dum": "Dům"}
 
 
 SURFACE_TOLERANCE = 2
+# Slova názvů ulic, která nic nerozlišují
+_STREET_STOP = {"namesti", "nam", "trida", "ulice", "nabrezi"}
+
+
+def _words(text: str) -> set[str]:
+    text = unicodedata.normalize("NFKD", text or "").encode("ascii", "ignore").decode().lower()
+    return set(re.findall(r"[a-z]{3,}", text))
+
+
+def _street(location: str, area_name: str) -> set[str]:
+    """Slova ulice z adresy, prázdná množina, když adresa ulici neuvádí. Portály píšou adresu různě:
+    "Jeronýmova, Frýdek-Místek - Frýdek", "Ostrava, Kosmonautů", "Ostrava - Zábřeh - Svazácká", "Ostrava - Hrabůvka"."""
+    city = _words(area_name)
+    if "," in location:
+        parts = [p for p in location.split(",") if not _words(p) & (city | {"kraj", "okres"})]
+    else:
+        parts = location.split(" - ")
+        parts = parts[2:] if len(parts) >= 3 else []
+    return (_words(parts[0]) - _STREET_STOP) if parts else set()
 
 
 def _group(rows) -> "OrderedDict[tuple, dict]":
-    """Stejná nemovitost na více portálech: shoda typu, lokality, dispozice a ceny, plocha ± SURFACE_TOLERANCE m²."""
+    """Stejná nemovitost na více portálech: shoda typu, lokality, dispozice a ceny, plocha ± SURFACE_TOLERANCE m²
+    a ulice se nevylučují (mají společné slovo, nebo jedna z adres ulici neuvádí)."""
     groups: "OrderedDict[tuple, dict]" = OrderedDict()
     buckets: dict[tuple, list[tuple]] = {}
+    streets: dict[tuple, set[str]] = {}
     for o in rows:
         key = (o["link"],)
         if o["surface"] and o["price"]:
+            street = _street(o["location"], o["area_name"])
             bucket = buckets.setdefault((o["kind"], o["area_name"], o["disposition"], o["price"]), [])
-            key = next((k for k in bucket if abs(k[-1] - o["surface"]) <= SURFACE_TOLERANCE), None)
+            key = next((k for k in bucket if abs(k[-2] - o["surface"]) <= SURFACE_TOLERANCE
+                        and (not street or not streets[k] or street & streets[k])), None)
             if key is None:
-                key = (o["kind"], o["area_name"], o["disposition"], o["price"], o["surface"])
+                key = (o["kind"], o["area_name"], o["disposition"], o["price"], o["surface"], len(streets))
                 bucket.append(key)
+            streets[key] = streets.get(key) or street
         g = groups.setdefault(key, {"main": o, "links": [], "first_seen": o["first_seen"]})
         if o["portal"] not in [l["portal"] for l in g["links"]]:
             g["links"].append({"portal": o["portal"], "link": o["link"]})
